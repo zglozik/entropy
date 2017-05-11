@@ -9,7 +9,9 @@
 #define	LINE_SEP	'#'
 #define	FIELD_SEP	','
 
+// vector of real numbers to store one line of sample data from the file
 typedef std::vector<double> Data;
+// list of rows from the input file
 typedef	std::list<Data>     Chart;
 
 // private functions
@@ -17,7 +19,7 @@ typedef	std::list<Data>     Chart;
 static bool read_proba(std::istream &str, Data &tdx);
 static bool read_chart(Chart &chart, std::istream &str);
 static double compute_k(const Chart &chart, int j, double time_slice);
-static double compute_function(double p, double k);
+static double compute_function(double p);
 static void do_job(const Chart &chart, double time_slice);
 
 //----------------------------------------------------------------------
@@ -29,14 +31,19 @@ bool read_proba(std::istream &str, Data &tdx)
     char c;
     double number;
 
+    // tdx will hold all samples from one line of the input file
     tdx.clear();
-    
+
+    // read the first number from the input until the field
+    // or line separator
     str >> number;
     while (str >> c && c != FIELD_SEP && c != LINE_SEP) {
 	// empty
     }
 
     while (str && c == FIELD_SEP) {
+	// we have found one number, add it to the output and
+	// read the next one
 	tdx.push_back(number);
 
 	str >> number;
@@ -46,7 +53,9 @@ bool read_proba(std::istream &str, Data &tdx)
     }
     if (!str || c != LINE_SEP)
 	return false;
-    
+
+    // we have reached the end of line separator and have
+    // successfully stored one line in tdx
     tdx.push_back(number);
     return true;
 }
@@ -58,6 +67,7 @@ bool read_proba(std::istream &str, Data &tdx)
 static bool read_chart(Chart &chart, std::istream &str)
 {
     Data dx;
+    // read all lines from the input file and store in chart
     while (read_proba(str, dx)) {
 	chart.push_back(dx);
     }
@@ -95,18 +105,18 @@ static double compute_entropy(const Chart &chart, int j,
 {
     double	entropy = 0;
     Chart::const_iterator current = chart.begin();
-    double prevp = compute_function((*current)[j], k);
+    double prevp = compute_function((*current)[j] / k);
     double p;
 
     for (current++; current != chart.end(); prevp = p, current++) {
-	p = compute_function((*current)[j], k);
+	p = compute_function((*current)[j] / k);
 	entropy -= (prevp + p) * time_slice / 2;
     }
 
     return entropy;
 }
 
-static double compute_function(double p, double k)
+static double compute_function(double p)
 {
     double value = 0;
 
@@ -114,7 +124,7 @@ static double compute_function(double p, double k)
 	std::cerr << "bad probability: " << p << std::endl;
 	exit(1);
     } else if (p > 0) {
-	value = p * log2(p / k);
+	value = p * log2(p);
     }
 
     return value;
