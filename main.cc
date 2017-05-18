@@ -83,6 +83,7 @@ static double compute_k(const Chart &chart, int j, double time_slice)
     double i = 0;
     Chart::const_iterator prev, current;
 
+    // calculate integral of data from column of the input file
     prev = current = chart.begin();
     for (current++; current != chart.end(); prev = current, current++) {
 	i += ((*prev)[j] + (*current)[j]) * time_slice / 2;
@@ -108,6 +109,7 @@ static double compute_entropy(const Chart &chart, int j,
     double prevp = compute_function((*current)[j] / k);
     double p;
 
+    // calculate -integral(p(x)/k * log2(p(x)/k))
     for (current++; current != chart.end(); prevp = p, current++) {
 	p = compute_function((*current)[j] / k);
 	entropy -= (prevp + p) * time_slice / 2;
@@ -140,6 +142,7 @@ static void do_job(const Chart &chart, double time_slice)
     std::vector<double> entropies(width);
     double entropy = 0;
 
+    // calculate entropy separately for each column of input
     for (int j = 0; j < width; j++) {
 	double k = compute_k(chart, j, time_slice);
 	entropies[j] = compute_entropy(chart, j, time_slice, k);
